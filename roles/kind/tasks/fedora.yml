@@ -1,0 +1,22 @@
+- name: Copy logind.conf to remote host
+  ansible.builtin.copy: 
+    src: ../files/logind.conf
+    dest: /etc/systemd/logind.conf
+  register: logind_conf_changed
+
+- name: Restart logind
+  ansible.builtin.systemd:
+    name: systemd-logind.service
+    state: restarted
+  when: logind_conf_changed.changed
+
+- name: dnf install
+  ansible.builtin.dnf:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  loop: "{{ _dnf }}"
+  register: result
+  until: result is succeeded
+  notify:
+    - podman | system rest
+    - podman | systemctl restart podman.service

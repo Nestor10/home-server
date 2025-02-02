@@ -1,0 +1,13 @@
+- name: home server kind
+  hosts: home-server
+  tasks:
+    - name: Include vars
+      ansible.builtin.include_vars:
+        dir: ../vars
+        depth: 1
+
+    - name: include role
+      ansible.builtin.include_role:
+        name: "../roles/kind"
+        apply: 
+          become: true

@@ -1,0 +1,18 @@
+---
+# handlers file for podman
+- name: podman | system rest 
+  ansible.builtin.command:
+    cmd: podman system reset --force
+  loop: "{{ ansible_play_hosts }}"
+  delegate_to: "{{ item }}"
+
+- name: podman | systemctl restart podman.service
+  ansible.builtin.service:
+    name: "podman.service"
+    state: "restarted"
+    enabled: true
+  loop: "{{ ansible_play_hosts }}"
+  delegate_to: "{{ item }}"
+  run_once: true
+  changed_when: false
+  failed_when: false

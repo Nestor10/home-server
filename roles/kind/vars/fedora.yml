@@ -1,0 +1,10 @@
+_dnf:
+  - { release: "fedora", state: "latest", name: "containernetworking-plugins" }
+  - { release: "fedora", state: "latest", name: "podman" }
+  - { release: "fedora", state: "latest", name: "podman-docker" }
+  - { release: "fedora", state: "latest", name: "catatonit" }
+  - { release: "fedora", state: "latest", name: "slirp4netns" }
+  - { release: "fedora", state: "latest", name: "passt" }
+  - { release: "fedora", state: "latest", name: "aardvark-dns"}
+  - { release: "fedora", state: "latest", name: "netavark"}
+  - { release: "fedora", state: "latest", name: "acl"}

@@ -1,0 +1,11 @@
+home-server:
+  hosts:
+    node3:
+
+laptop:
+  hosts:
+    node3:
+
+podman:
+  children:
+    laptop:

@@ -1,0 +1,45 @@
+[project]
+name = "homeserver"
+version = "0.0.0"
+
+description = "Over-building now will extend to home"
+
+readme = "README.md"
+requires-python = ">=3.12"
+
+license = {file = "LICENSE"}
+
+keywords = ["k8s", "ansible"]
+
+authors = [
+  {name = "me", email = "ericsmith.lpi@gmail.com" }
+]
+
+maintainers = [
+  {name = "also me", email = "ericsmith.lpi@gmail.com" }
+]
+
+classifiers = [ 
+  "Development Status :: 3 - Pre-Alpha",
+
+  "Intended Audience :: Its me again",
+  "Topic :: I find this fun :: really",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [ 
+]
+
+[project.optional-dependencies]
+dev = ["check-manifest", "ansible", "ansible-lint", "cryptography", "netaddr"]
+test = ["coverage"]
+
+# This is configuration specific to the `setuptools` build backend.
+# If you are using a different build backend, you will need to change this.
+[tool.setuptools]
+packages = []
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"

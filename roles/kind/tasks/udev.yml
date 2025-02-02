@@ -1,0 +1,11 @@
+- name: Check if the object has 'name' and 'value' keys
+  assert:
+    that:
+      - "'name' in item"
+      - "'value' in item"
+    fail_msg: "Object in 'my_files' is missing 'name' or 'value' key: {{ item }}"
+- name: Create the file (on target host)
+  copy:
+    dest: "{{ file_path }}"
+    content: "{{ contents }}"
+    mode: '0644'
