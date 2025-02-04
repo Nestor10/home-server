@@ -8,3 +8,4 @@ _dnf:
   - { release: "fedora", state: "latest", name: "aardvark-dns"}
   - { release: "fedora", state: "latest", name: "netavark"}
   - { release: "fedora", state: "latest", name: "acl"}
+  - { release: "fedora", state: "latest", name: "helm"}

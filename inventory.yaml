@@ -1,4 +1,4 @@
-home-server:
+home_server:
   hosts:
     node3:
 
@@ -6,6 +6,6 @@ laptop:
   hosts:
     node3:
 
-podman:
+kind:
   children:
     laptop:

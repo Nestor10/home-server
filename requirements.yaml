@@ -1,6 +1,4 @@
 collections:
   - name: community.crypto
     source: https://galaxy.ansible.com
-#  - name: python3-libdnf5
-#    source: https://galaxy.ansible.com
-#roles:
+roles:

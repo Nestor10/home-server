@@ -1,0 +1,33 @@
+---
+
+- name: Check if kind cluster exists
+  shell: "kind get clusters --name {{ cluster_name }}"
+  register: kind_cluster_check
+  ignore_errors: true  # Important: Ignore errors if cluster doesn't exist
+
+- name: Create extra kind directory if it doesn't exist
+  file:
+    path: "{{ ansible_user_dir }}/{{ cluster_name }}/kind_volume_mount"
+    state: directory
+    mode: 0755
+  when: kind_cluster_check.rc != 0
+
+- name: Set the mount directory variable
+  set_fact:
+    kind_mount_dir: "{{ ansible_user_dir }}/{{ cluster_name }}/kind_volume_mount"
+
+- name: Copy cluster config template
+  template:
+    src: "../files/cluster-config.yaml.j2"
+    dest: "/tmp/cluster-config.yaml"
+  when: kind_cluster_check.rc != 0
+  become: true
+
+- name: Create kind cluster
+  shell: "kind create cluster --name {{ cluster_name }} --config /tmp/cluster-config.yaml"
+  when: kind_cluster_check.rc != 0
+
+- name: Cluster creation has been finished
+  debug:
+    msg: "Cluster creation of kind cluster {{ cluster_name }} has been finished."
+  when: kind_cluster_check.rc != 0

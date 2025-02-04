@@ -1,2 +1,4 @@
 ---
-# defaults file for podman
+# defaults file for kind
+kind_version: latest
+kind_install_dir: /usr/local/bin

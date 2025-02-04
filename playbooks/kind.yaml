@@ -1,5 +1,5 @@
 - name: home server kind
-  hosts: home-server
+  hosts: home_server
   tasks:
     - name: Include vars
       ansible.builtin.include_vars:
@@ -11,3 +11,9 @@
         name: "../roles/kind"
         apply: 
           become: true
+
+    - name: build main kind cluster
+      include_tasks: ../tasks/create-cluster.yml
+      vars:
+        cluster_name: "main"
+        kind_image_version: "v1.32.1"
