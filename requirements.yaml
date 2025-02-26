@@ -1,4 +1,7 @@
 collections:
-  - name: community.crypto
-    source: https://galaxy.ansible.com
+  - community.crypto
+  - kubernetes.core
+  - community.kubernetes
+
 roles:
+  - geerlingguy.nginx

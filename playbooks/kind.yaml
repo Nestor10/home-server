@@ -1,6 +1,8 @@
 - name: home server kind
   hosts: home_server
+
   tasks:
+
     - name: Include vars
       ansible.builtin.include_vars:
         dir: ../vars
@@ -9,11 +11,232 @@
     - name: include role
       ansible.builtin.include_role:
         name: "../roles/kind"
-        apply: 
+        apply:
           become: true
 
-    - name: build main kind cluster
-      include_tasks: ../tasks/create-cluster.yml
-      vars:
-        cluster_name: "main"
-        kind_image_version: "v1.32.1"
+    - name: Allow Nginx (httpd) to make network connections (SELinux)
+      seboolean:
+        name: httpd_can_network_connect
+        persistent: true
+        state: true
+      become: yes
+
+    - name: Open firewall port for MicroK8s (Fedora) - Restricted Access
+      firewalld:
+        rich_rule: 'rule family="ipv4" source address="192.168.8.0/24" port protocol="tcp" port="16443" accept'
+        permanent: true
+        state: enabled
+      become: yes
+
+    - name: Create /snap symlink (Fedora)
+      file:
+        src: /var/lib/snapd/snap
+        dest: /snap
+        state: link
+      become: yes
+
+    - name: Install MicroK8s snap
+      snap:
+        name: microk8s
+        state: present
+        classic: yes
+      become: yes
+
+    - name: Add user to microk8s group (on the target server initially)
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: microk8s
+        append: yes
+      become: yes
+
+    - name: Change ownership of .kube directory
+      file:
+        path: "~/.kube"
+        state: directory
+        recurse: yes
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+      run_once: true
+
+    - name: Enable MicroK8s addons (one at a time)
+      shell: microk8s enable {{ item }}
+      loop: [hostpath-storage]
+      become: yes
+
+    - name: Generate kubeconfig on the MicroK8s node
+      shell: microk8s config > ~/.kube/config
+      args:
+        executable: /bin/bash
+      register: kubeconfig_gen
+
+    - name: Install Python package
+      pip:
+        name: "kubernetes"
+        state: present
+
+    - name: Allow HTTP traffic through the firewall (permanent)
+      firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: yes
+      become: yes
+
+    - name: Get Calico IP pool CIDR
+      shell: >-
+        cat /var/snap/microk8s/current/args/cni-network/cni.yaml |
+        grep CALICO_IPV4POOL_CIDR -A1 |
+        tail -n1 |
+        grep -oP '[\d\./]+'
+      register: calico_cidr_output
+
+    - debug:
+        msg: "Calico CIDR: {{ calico_cidr_output.stdout }}"
+
+    - name: Set Calico network fact
+      set_fact:
+        calico_network: "{{ calico_cidr_output.stdout }}"
+
+    - name: Create firewalld zone for microk8s
+      firewalld:
+        zone: microk8s-cluster
+        state: present
+        permanent: yes
+      become: true
+
+    - name: Set target for microk8s zone to ACCEPT
+      firewalld:
+        zone: microk8s-cluster
+        target: ACCEPT
+        permanent: yes
+        state: present
+      become: true
+
+    - name: Add Calico subnet as source to microk8s zone
+      firewalld:
+        zone: microk8s-cluster
+        source: "{{ calico_network }}"
+        permanent: yes
+        state: enabled
+      become: true
+
+    - name: Reload firewalld
+      service:
+        name: firewalld
+        state: reloaded
+      become: true
+
+    - name: Fetch kubeconfig from the MicroK8s node to the control node
+      fetch:
+        src: ~/.kube/config
+        dest: ../secret/kubeconfig
+        flat: yes
+      run_once: true
+
+######################################################
+# Metallb
+
+    - name: Add metallb chart repo
+      community.kubernetes.helm_repository:
+        name: metallb
+        repo_url: "https://metallb.github.io/metallb"
+
+    - name: Install/Upgrade MetalLb - Helm
+      community.kubernetes.helm:
+        name: metallb
+        chart_ref: metallb/metallb
+        create_namespace: true
+        release_namespace: metallb
+
+    - name: Create primary ip pool for metallb
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: metallb.io/v1beta1
+          kind: IPAddressPool
+          metadata:
+            name: primary-pool
+            namespace: metallb
+          spec:
+            addresses:
+              - 10.0.0.192/26
+
+    - name: Create advertise for metallb primary ip pool
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: metallb.io/v1beta1
+          kind: L2Advertisement
+          metadata:
+            name: primary-advertise
+            namespace: metallb
+
+######################################################
+#private ingress controller
+
+    - name: Add stable chart repo
+      community.kubernetes.helm_repository:
+        name: ingress-nginx
+        repo_url: https://kubernetes.github.io/ingress-nginx
+
+    - name: Install/Upgrade Nginx Private Ingress using Helm
+      community.kubernetes.helm:
+        state: present
+        name: nginx-private
+        chart_ref: ingress-nginx/ingress-nginx
+        release_namespace: private-nginx
+        create_namespace: true
+        values:
+          nameOverride: "private"
+          controller:
+            service:
+              annotations:
+                metallb.universe.tf/loadBalancerIPs: 10.0.0.193
+            ingressClassResource:
+              name: "nginx-private"
+
+######################################################
+#primary ingress controller
+
+    - name: Install/Upgrade Nginx Ingress using Helm
+      community.kubernetes.helm:
+        state: present
+        name: nginx
+        chart_ref: ingress-nginx/ingress-nginx
+        release_namespace: ingress
+        create_namespace: true
+        values:
+          controller:
+            service:
+              annotations:
+                metallb.universe.tf/loadBalancerIPs: 10.0.0.194
+
+######################################################
+# install argo on private ingress
+
+    - name: Add stable chart repo
+      community.kubernetes.helm_repository:
+        name: argo
+        repo_url: "https://argoproj.github.io/argo-helm"
+
+    - name: Install/Upgrade Argo CD using Helm
+      community.kubernetes.helm:
+        name: argo
+        chart_ref: argo/argo-cd
+        create_namespace: true
+        release_namespace: argocd
+        values:
+          configs:
+            params:
+              server.insecure: true
+          server:
+            ingress:
+              hostname: argocd
+              enabled: true
+              annotations:
+                nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+                nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+              ingressClassName: nginx-private
+            hostname: argocd
+        state: present
+      register: helm_result

@@ -10,6 +10,13 @@
     state: restarted
   when: logind_conf_changed.changed
 
+# https://kind.sigs.k8s.io/docs/user/known-issues#pod-errors-due-to-too-many-open-files
+- name: Add rules to fix kind issue with fs.inotify.max_user_watches
+  copy:
+    dest: "/etc/sysctl.d/98-sysctl.conf"
+    src: "../files/98-sysctl.conf"
+    mode: '0644'
+
 - name: dnf install
   ansible.builtin.dnf:
     name: "{{ item.name }}"
