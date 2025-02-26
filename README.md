@@ -6,6 +6,9 @@ argoCD
 # environment setup
 
 *  pyenv  (fedora)
+
+    `dnf install go-task`
+
     `sudo dnf builddep python3`
 
     `curl https://pyenv.run | bash`
@@ -20,18 +23,19 @@ argoCD
 
     `ansible-galaxy collection install -r requirements.yml`
 
-* 
 ## Cheat sheet 
 verify inventory
 `ansible-inventory -i inventory.yaml --list`
 
 use make file for common tasks 
 
-This may be needed after updating to a newer version of podman
-`podman system reset --force`
-
-
 For fedora systems 
 we need 
     `sudo dnf install python3-libdnf5`
 
+## TODOs
+* right now we are tooled to work on one node. But adapting this to multiple nodes should be fairly straight forward
+  * refactor to isolate per-node microk8s install
+    * we'll run once on several tasks
+  * refactor to isolate per-cluster actions
+  * migrate to task file

@@ -1,0 +1,42 @@
+- name: Get latest kind release info
+  uri:
+    url: "https://api.github.com/repos/kubernetes-sigs/kind/releases/latest"
+    return_content: yes
+    method: GET
+  register: kind_release
+
+- name: Extract the latest kind version (without 'v' prefix)
+  set_fact:
+    latest_kind_version: "{{ kind_release.json.tag_name | regex_replace('^v', '') }}"
+
+- name: Check if kind binary exists and get its version
+  stat:
+    path: "{{ kind_install_dir }}/kind" # Path where you install kind
+  register: kind_binary_stat
+
+- name: Get installed kind version (if it exists)
+  set_fact:
+    installed_kind_version: "{{ kind_binary_stat.stat.version }}"
+  when: kind_binary_stat.stat.exists
+
+- name: Debug versions (optional)
+  debug:
+    msg:
+      - "Latest kind version: {{ latest_kind_version }}"
+      - "Installed kind version: {{ installed_kind_version | default('not installed') }}"
+
+- name: Download and install kind if newer version is available or not installed
+  block:
+    - name: Create kind install directory
+      file:
+        path: "{{ kind_install_dir }}"
+        state: directory
+        mode: 0755
+
+    - name: Download kind binary
+      get_url:
+        url: "https://kind.sigs.k8s.io/dl/v{{ latest_kind_version }}/kind-linux-amd64"
+        dest: "{{ kind_install_dir }}/kind"
+        mode: 0755
+
+  when: latest_kind_version is defined and (installed_kind_version is undefined or latest_kind_version != installed_kind_version)

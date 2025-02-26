@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["check-manifest", "ansible", "ansible-lint", "cryptography", "netaddr"]
+dev = ["check-manifest", "ansible", "ansible-lint", "cryptography", "netaddr", "kubernetes"]
 test = ["coverage"]
 
 # This is configuration specific to the `setuptools` build backend.

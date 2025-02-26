@@ -1,0 +1,19 @@
+version: '3'
+
+env:
+  ENV: testing
+  KUBECONF: '{{.USER_WORKING_DIR}}/secret/kubeconfig'
+
+dotenv: ['.env', '{{.ENV}}/.env', '{{.HOME}}/.env']
+
+tasks:
+  showenv:
+    cmds:
+      - printenv
+  k9s:
+    cmds:
+      - k9s --kubeconfig '{{.USER_WORKING_DIR}}/secret/kubeconfig'
+
+  assets:
+    cmds:
+      - esbuild --bundle --minify css/index.css > public/bundle.css

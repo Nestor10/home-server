@@ -1,6 +1,7 @@
 collections:
-  - name: community.crypto
-    source: https://galaxy.ansible.com
-#  - name: python3-libdnf5
-#    source: https://galaxy.ansible.com
-#roles:
+  - community.crypto
+  - kubernetes.core
+  - community.kubernetes
+
+roles:
+  - geerlingguy.nginx

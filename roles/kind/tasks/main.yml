@@ -21,6 +21,12 @@
         - "../vars"
       skip: true
 
+
+- name: Prechecks
+  include_tasks: precheck.yml
+  tags:
+    - always
+
 - name: Create files based on host-specific variable
   block:
     - name: Check if the variable is defined and is a list
@@ -71,24 +77,6 @@
 
 - name: flush handlers
   ansible.builtin.meta: flush_handlers
-
-- name: Create root directory if it does not exist
-  ansible.builtin.file:
-    path: "{{ share_root_directory }}"
-    state: directory
-    mode: '2775'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_id }}"
-
-
-- name: Create systemd quadlet directory 
-  ansible.builtin.file:
-    path: "{{ quadlet_user_directory }}"
-    state: directory
-    mode: '751'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_id }}"
-  
 
 - name: systemctl start podman.service
   ansible.builtin.service:
