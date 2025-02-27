@@ -39,3 +39,4 @@ we need
     * we'll run once on several tasks
   * refactor to isolate per-cluster actions
   * migrate to task file
+* replace nginx with something else

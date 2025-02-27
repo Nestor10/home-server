@@ -12,7 +12,7 @@ secrets:
 	ansible-vault edit --vault-password-file secret/secret.txt vars/project_vars.yaml
 
 install_kind_cluster:
-	ansible-playbook --vault-password-file secret/secret.txt -i inventory.yaml --tags "install, create" playbooks/kind.yaml
+	ansible-playbook --vault-password-file secret/secret.txt -i inventory.yaml --tags "install, create" playbooks/microk8s.yaml
 
 play_kind:
-	ansible-playbook --vault-password-file secret/secret.txt -i inventory.yaml playbooks/kind.yaml
+	ansible-playbook --vault-password-file secret/secret.txt -i inventory.yaml playbooks/microk8s.yaml
